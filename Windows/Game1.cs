@@ -1,10 +1,12 @@
 using Microsoft.Kinect;
+using ResolutionBuddy;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using System.IO;
 
-namespace KinectMonoGame_ColorBasics
+namespace ColorBasicsFullScreen_KinectMonogame
 {
     /// <summary>
     /// This is the main type for your game
@@ -34,10 +36,15 @@ namespace KinectMonoGame_ColorBasics
 		/// </summary>
 		Color[] pixelData_clear;
 
+		private const int ScreenX = 1024;
+		private const int ScreenY = 768;
+
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+
+			Resolution.Init(ref graphics);
         }
 
         /// <summary>
@@ -48,7 +55,8 @@ namespace KinectMonoGame_ColorBasics
         /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
+			Resolution.SetDesiredResolution(ScreenX, ScreenY);
+			Resolution.SetScreenResolution(1280, 720, true);
 
             base.Initialize();
         }
@@ -63,9 +71,9 @@ namespace KinectMonoGame_ColorBasics
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
 			pixels = new Texture2D(graphics.GraphicsDevice,
-							640,
-							480, false, SurfaceFormat.Color);
-			pixelData_clear = new Color[640 * 480];
+							ScreenX,
+							ScreenY, false, SurfaceFormat.Color);
+			pixelData_clear = new Color[ScreenX * ScreenY];
 			for (int i = 0; i < pixelData_clear.Length; ++i)
 				pixelData_clear[i] = Color.Black;
 
@@ -88,7 +96,7 @@ namespace KinectMonoGame_ColorBasics
 				this.sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
 
 				// Allocate space to put the color pixels we'll create
-				this.colorPixels = new byte[this.sensor.DepthStream.FramePixelDataLength * sizeof(int)];
+				this.colorPixels = new byte[this.sensor.ColorStream.FramePixelDataLength];
 
 				// Add an event handler to be called whenever there is new color frame data
 				this.sensor.ColorFrameReady += this.SensorColorFrameReady;
@@ -129,7 +137,11 @@ namespace KinectMonoGame_ColorBasics
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            // TODO: Add your update logic here
+			if ((GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed) ||
+			Keyboard.GetState().IsKeyDown(Keys.Escape))
+			{
+				this.Exit();
+			}
 
             base.Update(gameTime);
         }
@@ -143,7 +155,14 @@ namespace KinectMonoGame_ColorBasics
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
 			pixels.SetData<Color>(pixelData_clear);
-			spriteBatch.Begin();
+
+			// Calculate Proper Viewport according to Aspect Ratio
+			Resolution.ResetViewport();
+			spriteBatch.Begin(SpriteSortMode.Immediate,
+			BlendState.AlphaBlend,
+			null, null, null, null,
+			Resolution.TransformationMatrix());
+
 			spriteBatch.Draw(pixels, new Vector2(0, 0), null, Color.White);
 			spriteBatch.End();
 
@@ -164,12 +183,54 @@ namespace KinectMonoGame_ColorBasics
 					// Copy the pixel data from the image to a temporary array
 					colorFrame.CopyPixelDataTo(this.colorPixels);
 
+					//get the width of the image
+					int imageWidth = colorFrame.Width;
+
+					//get the height of the image
+					int imageHeight = colorFrame.Height;
+
+					//// Convert the depth to RGB
+					//for (int colorIndex = 0; colorIndex < colorPixels.Length; colorIndex += 4)
+					//{
+					//	//get the pixel column
+					//	int x = (colorIndex / 4) % imageWidth;
+
+					//	//get the pixel row
+					//	int y = (colorIndex / 4) / imageWidth;
+
+					//	//convert the image x to cell x
+					//	int x2 = (x * ScreenX) / imageWidth;
+
+					//	//convert the image y to cell y
+					//	int y2 = (y * ScreenY) / imageHeight;
+
+					//	//get the index of the cell
+					//	int cellIndex = (y2 * ScreenX) + x2;
+
+					//	//Create a new color
+					//	pixelData_clear[cellIndex] = new Color(colorPixels[colorIndex + 2], colorPixels[colorIndex + 1], colorPixels[colorIndex + 0]);
+					//}
+
 					// Convert the depth to RGB
-					for (int colorIndex = 0; colorIndex < colorPixels.Length; colorIndex += 4)
+					for (int pixelIndex = 0; pixelIndex < pixelData_clear.Length; pixelIndex++)
 					{
-						pixelData_clear[colorIndex / 4].R = colorPixels[colorIndex + 2];
-						pixelData_clear[colorIndex / 4].G = colorPixels[colorIndex + 1];
-						pixelData_clear[colorIndex / 4].B = colorPixels[colorIndex + 0];
+						//get the pixel column
+						int x = pixelIndex % ScreenX;
+
+						//get the pixel row
+						int y = pixelIndex / ScreenX;
+
+						//convert the image x to cell x
+						int x2 = (x * imageWidth) / ScreenX;
+
+						//convert the image y to cell y
+						int y2 = (y * imageHeight) / ScreenY;
+
+						//get the index of the cell
+						int cellIndex = ((y2 * imageWidth) + x2) * 4;
+
+						//Create a new color
+						pixelData_clear[pixelIndex] = new Color(colorPixels[cellIndex + 2], colorPixels[cellIndex + 1], colorPixels[cellIndex + 0]);
 					}
 				}
 			}
