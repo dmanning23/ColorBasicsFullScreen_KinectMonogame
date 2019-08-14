@@ -50,8 +50,6 @@ namespace ColorBasicsFullScreen_KinectMonogame
 		{
 			graphics = new GraphicsDeviceManager(this);
 			Content.RootDirectory = "Content";
-
-			Resolution.Init(ref graphics);
 		}
 
 		/// <summary>
@@ -62,8 +60,11 @@ namespace ColorBasicsFullScreen_KinectMonogame
 		/// </summary>
 		protected override void Initialize()
 		{
-			Resolution.SetDesiredResolution(ScreenX, ScreenY);
-			Resolution.SetScreenResolution(1280, 720, true);
+#if __IOS__
+			var resolution = new ResolutionComponent(this, graphics, new Point(1280, 720), new Point(1280, 720), true, false);
+#else
+			var resolution = new ResolutionComponent(this, graphics, new Point(1280, 720), new Point(1280, 720), false, false);
+#endif
 
 			base.Initialize();
 		}
