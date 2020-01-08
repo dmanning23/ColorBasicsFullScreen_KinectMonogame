@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{91F47EA3-8723-41EE-B3FF-16442776B9FB}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ColorBasicsFullScreen_KinectMonogame</RootNamespace>
     <AssemblyName>ColorBasicsFullScreen_KinectMonogame</AssemblyName>
@@ -55,6 +55,9 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>ColorBasicsFullScreen_KinectMonogame.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <None Include="App.config" />
